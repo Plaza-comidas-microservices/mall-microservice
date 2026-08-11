@@ -1,0 +1,42 @@
+package com.pragma.plazacomidas.mall.domain.usecase;
+
+import com.pragma.plazacomidas.mall.domain.api.IRestaurantServicePort;
+import com.pragma.plazacomidas.mall.domain.exception.DomainException;
+import com.pragma.plazacomidas.mall.domain.model.RestaurantModel;
+import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
+
+public class RestaurantUseCase implements IRestaurantServicePort {
+
+    private final IRestaurantPersistencePort restaurantPersistencePort;
+
+    public RestaurantUseCase(IRestaurantPersistencePort restaurantPersistencePort) {
+        this.restaurantPersistencePort = restaurantPersistencePort;
+    }
+
+    @Override
+    public RestaurantModel createRestaurant(RestaurantModel restaurantModel) {
+        String name = restaurantModel.getName();
+        String nit = restaurantModel.getNit();
+        String phone = restaurantModel.getPhone();
+        String address = restaurantModel.getAddress();
+        String logoUrl = restaurantModel.getLogoUrl();
+
+        if (name == null || name.isBlank() || name.matches("\\d+")) {
+            throw new DomainException("El nombre del restaurante es obligatorio y no puede contener solo números");
+        } else if (nit == null || !nit.matches("\\d+")) {
+            throw new DomainException("El NIT debe ser únicamente numérico");
+        } else if (phone == null || !phone.matches("^\\+?\\d{1,13}$")) {
+            throw new DomainException("El teléfono no es válido. Ejemplo +573005698325");
+        } else if (address == null || address.isBlank()) {
+            throw new DomainException("La dirección es obligatoria");
+        } else if (logoUrl == null || logoUrl.isBlank()) {
+            throw new DomainException("La URL del logo es obligatoria");
+        } else if (restaurantModel.getOwnerId() == null) {
+            throw new DomainException("El id del propietario es obligatorio");
+        }
+
+        
+
+        return restaurantPersistencePort.saveRestaurant(restaurantModel);
+    }
+}
