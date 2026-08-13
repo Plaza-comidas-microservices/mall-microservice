@@ -13,3 +13,7 @@ spring:
     show-sql: true
 appDescription: "Pragma Powerup"
 appVersion: "1.0.0"
+
+users:
+  service:
+    url: http://localhost:8081

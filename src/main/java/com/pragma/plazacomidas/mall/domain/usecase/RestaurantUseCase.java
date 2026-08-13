@@ -4,13 +4,16 @@ import com.pragma.plazacomidas.mall.domain.api.IRestaurantServicePort;
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.RestaurantModel;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
+import com.pragma.plazacomidas.mall.domain.spi.IUserValidationPort;
 
 public class RestaurantUseCase implements IRestaurantServicePort {
 
     private final IRestaurantPersistencePort restaurantPersistencePort;
+    private final IUserValidationPort userValidationPort;
 
-    public RestaurantUseCase(IRestaurantPersistencePort restaurantPersistencePort) {
+    public RestaurantUseCase(IRestaurantPersistencePort restaurantPersistencePort, IUserValidationPort userValidationPort) {
         this.restaurantPersistencePort = restaurantPersistencePort;
+        this.userValidationPort = userValidationPort;
     }
 
     @Override
@@ -20,6 +23,7 @@ public class RestaurantUseCase implements IRestaurantServicePort {
         String phone = restaurantModel.getPhone();
         String address = restaurantModel.getAddress();
         String logoUrl = restaurantModel.getLogoUrl();
+        Long ownerId = restaurantModel.getOwnerId();
 
         if (name == null || name.isBlank() || name.matches("\\d+")) {
             throw new DomainException("El nombre del restaurante es obligatorio y no puede contener solo números");
@@ -33,9 +37,10 @@ public class RestaurantUseCase implements IRestaurantServicePort {
             throw new DomainException("La URL del logo es obligatoria");
         } else if (restaurantModel.getOwnerId() == null) {
             throw new DomainException("El id del propietario es obligatorio");
+        }else if (!userValidationPort.isOwner(ownerId)){
+            throw new DomainException("El id del propietario no es válido");
         }
 
-        
 
         return restaurantPersistencePort.saveRestaurant(restaurantModel);
     }
