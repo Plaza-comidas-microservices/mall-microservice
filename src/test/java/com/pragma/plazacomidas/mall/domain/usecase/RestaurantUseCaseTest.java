@@ -45,7 +45,6 @@ class RestaurantUseCaseTest {
 
     @Test
     void shouldCreateRestaurantSuccessfullyWhenDataIsValid() {
-        // Given
         RestaurantModel restaurantModel = buildValidRestaurant();
         RestaurantModel restaurantGuardado = new RestaurantModel(1L, "Mall Burger", "123456789",
                 "Calle 10 # 20-30", "+573005698325", "http://logo.com/mall.png", 1L);
@@ -53,10 +52,8 @@ class RestaurantUseCaseTest {
         when(userValidationPort.isOwner(1L)).thenReturn(true);
         when(restaurantPersistencePort.saveRestaurant(any(RestaurantModel.class))).thenReturn(restaurantGuardado);
 
-        // When
         RestaurantModel resultado = restaurantUseCase.createRestaurant(restaurantModel);
 
-        // Then
         assertEquals(1L, resultado.getId());
         assertEquals("Mall Burger", resultado.getName());
         verify(userValidationPort, times(1)).isOwner(1L);
@@ -67,11 +64,9 @@ class RestaurantUseCaseTest {
 
     @Test
     void shouldThrowExceptionWhenNameContainsOnlyNumbers() {
-        // Given
         RestaurantModel restaurantModel = buildValidRestaurant();
         restaurantModel.setName("12345");
 
-        // When + Then
         DomainException exception = assertThrows(DomainException.class,
                 () -> restaurantUseCase.createRestaurant(restaurantModel));
 
@@ -82,11 +77,9 @@ class RestaurantUseCaseTest {
 
     @Test
     void shouldThrowExceptionWhenNitIsNotNumeric() {
-        // Given
         RestaurantModel restaurantModel = buildValidRestaurant();
         restaurantModel.setNit("NIT-123");
 
-        // When + Then
         DomainException exception = assertThrows(DomainException.class,
                 () -> restaurantUseCase.createRestaurant(restaurantModel));
 
@@ -96,11 +89,9 @@ class RestaurantUseCaseTest {
 
     @Test
     void shouldThrowExceptionWhenPhoneIsInvalid() {
-        // Given
         RestaurantModel restaurantModel = buildValidRestaurant();
         restaurantModel.setPhone("abc123");
-
-        // When + Then
+        
         DomainException exception = assertThrows(DomainException.class,
                 () -> restaurantUseCase.createRestaurant(restaurantModel));
 
@@ -110,11 +101,9 @@ class RestaurantUseCaseTest {
 
     @Test
     void shouldThrowExceptionWhenOwnerIsNotValid() {
-        // Given
         RestaurantModel restaurantModel = buildValidRestaurant();
         when(userValidationPort.isOwner(anyLong())).thenReturn(false);
 
-        // When + Then
         DomainException exception = assertThrows(DomainException.class,
                 () -> restaurantUseCase.createRestaurant(restaurantModel));
 
