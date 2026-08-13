@@ -37,6 +37,7 @@ class PlateUseCaseTest {
         plateUseCase = new PlateUseCase(platePersistencePort, restaurantPersistencePort);
     }
 
+    // Método auxiliar para crear un plato válido
     private PlateModel buildValidPlate() {
         return new PlateModel(null, "Hamburguesa doble", 25000, "Doble carne con queso",
                 "http://img.com/burger.png", "Comida rápida", false, 1L);
@@ -62,6 +63,21 @@ class PlateUseCaseTest {
         assertTrue(resultado.isActive());
         verify(restaurantPersistencePort, times(1)).existsById(1L);
         verify(platePersistencePort, times(1)).savePlate(any(PlateModel.class));
+    }
+
+    @Test
+    void shuldUpdatePlateSuccesfully(){
+        PlateModel existingPlate = buildValidPlate();
+        existingPlate.setId(1L);
+
+        when(platePersistencePort.getPlateById(1L)).thenReturn(existingPlate);
+        when(platePersistencePort.savePlate(any(PlateModel.class))).thenAnswer(invocation -> invocation.getArgument(0)); //Esto me devuelve exactamente lo que le pasé como argumento
+
+        PlateModel plateModelUpdated = plateUseCase.updatePlate(1L, 20000, "Doble carne ANGUS con queso");
+
+        assertEquals(1L, plateModelUpdated.getId()); //Que no cambie el ID
+        assertEquals(20000, plateModelUpdated.getPrice());
+        assertEquals("Doble carne ANGUS con queso", plateModelUpdated.getDescription());
     }
 
     // ---------- SAD PATHS ----------
@@ -149,4 +165,23 @@ class PlateUseCaseTest {
         assertEquals("El restaurante indicado no existe", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
     }
+
+    @Test
+    void shuldThrowExceptionWhenThePriceIsZero(){
+        DomainException exception = assertThrows(DomainException.class,
+                () -> plateUseCase.updatePlate(1L, 0, "Doble carne ANGUS con queso"));
+
+        assertEquals("El precio del plato debe ser entero y positivo", exception.getMessage());
+        verify(platePersistencePort, never()).savePlate(any());
+    }
+
+    @Test
+    void shuldThrowExceptionWhenThedescriptionIsBlank(){
+        DomainException exception = assertThrows(DomainException.class,
+                () -> plateUseCase.updatePlate(1L, 10000, ""));
+
+        assertEquals("La descripción no puede estar vacía", exception.getMessage());
+        verify(platePersistencePort, never()).savePlate(any());
+    }
+
 }
