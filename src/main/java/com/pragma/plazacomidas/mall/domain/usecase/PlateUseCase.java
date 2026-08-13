@@ -44,4 +44,24 @@ public class PlateUseCase implements IPlateServicePort {
         plateModel.setActive(true);
         return platePersistencePort.savePlate(plateModel);
     }
+
+    @Override
+    public PlateModel updatePlate(Long plateId, int newPrice, String newDescription) {
+        if(newPrice <= 0){
+            throw new DomainException("El precio del plato debe ser entero y positivo");
+        }else if ( newDescription == null || newDescription.isBlank()){
+            throw new DomainException("La descripción no puede estar vacía");
+        }
+
+        //Primero leemos lo que hay en la BD
+        PlateModel existingPlate = platePersistencePort.getPlateById(plateId);
+
+        //Luego Modifico los atributos que quiero actualizar
+        existingPlate.setPrice(newPrice);
+        existingPlate.setDescription(newDescription);
+
+        //Por último Guardo todo el objeto
+        return platePersistencePort.savePlate(existingPlate);
+        
+    }
 }

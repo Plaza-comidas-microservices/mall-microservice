@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pragma.plazacomidas.mall.application.dto.request.PlateRequestDto;
+import com.pragma.plazacomidas.mall.application.dto.request.UpdatePlateRequestDto;
 import com.pragma.plazacomidas.mall.application.dto.response.PlateResponseDto;
 import com.pragma.plazacomidas.mall.application.handler.IPlateHandler;
 import com.pragma.plazacomidas.mall.application.mapper.IPlateRequestMapper;
@@ -27,5 +28,12 @@ public class PlateHandler implements IPlateHandler {
         PlateModel plateModel = plateRequestMapper.toPlate(plateRequestDto);
         PlateModel createdPlate = plateServicePort.createPlate(plateModel);
         return plateResponseMapper.toResponse(createdPlate);
+    }
+
+    @Override
+    public PlateResponseDto updatePlate(Long plateId, UpdatePlateRequestDto updatePlateRequestDto) {
+        PlateModel plateUpdated = plateServicePort.updatePlate(
+                plateId, updatePlateRequestDto.getPrice(), updatePlateRequestDto.getDescription());
+        return plateResponseMapper.toResponse(plateUpdated);
     }
 }
