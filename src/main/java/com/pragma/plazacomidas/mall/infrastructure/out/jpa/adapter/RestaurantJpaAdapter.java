@@ -2,6 +2,7 @@ package com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter;
 
 import com.pragma.plazacomidas.mall.domain.model.RestaurantModel;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
+import com.pragma.plazacomidas.mall.infrastructure.exception.NoDataFoundException;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.mapper.IRestaurantEntityMapper;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.repository.IRestaurantRepository;
 
@@ -24,5 +25,12 @@ public class RestaurantJpaAdapter implements IRestaurantPersistencePort {
     @Override
     public boolean existsById(Long restaurantId) {
         return restaurantRepository.existsById(restaurantId);
+    }
+
+    @Override
+    public RestaurantModel getRestaurantById(Long restaurantId) {
+        return restaurantRepository.findById(restaurantId)
+                .map(restaurantEntityMapper::toRestaurantModel)
+                .orElseThrow(NoDataFoundException::new);
     }
 }

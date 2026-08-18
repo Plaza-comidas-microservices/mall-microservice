@@ -17,3 +17,6 @@ appVersion: "1.0.0"
 users:
   service:
     url: http://localhost:8081
+
+jwt:
+  secret: "qasshtipuuwnmcbwjcalibcieebnjolño29jne9djsallsdj-sdoo-ksks-o"
