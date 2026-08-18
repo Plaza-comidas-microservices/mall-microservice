@@ -24,16 +24,16 @@ public class PlateHandler implements IPlateHandler {
     private final IPlateResponseMapper plateResponseMapper;
 
     @Override
-    public PlateResponseDto savePlate(PlateRequestDto plateRequestDto) {
+    public PlateResponseDto savePlate(PlateRequestDto plateRequestDto, Long authenticatedUserId) {
         PlateModel plateModel = plateRequestMapper.toPlate(plateRequestDto);
-        PlateModel createdPlate = plateServicePort.createPlate(plateModel);
+        PlateModel createdPlate = plateServicePort.createPlate(plateModel, authenticatedUserId);
         return plateResponseMapper.toResponse(createdPlate);
     }
 
     @Override
-    public PlateResponseDto updatePlate(Long plateId, UpdatePlateRequestDto updatePlateRequestDto) {
+    public PlateResponseDto updatePlate(Long plateId, UpdatePlateRequestDto updatePlateRequestDto, Long authenticatedUserId) {
         PlateModel plateUpdated = plateServicePort.updatePlate(
-                plateId, updatePlateRequestDto.getPrice(), updatePlateRequestDto.getDescription());
+                plateId, updatePlateRequestDto.getPrice(), updatePlateRequestDto.getDescription(), authenticatedUserId);
         return plateResponseMapper.toResponse(plateUpdated);
     }
 }

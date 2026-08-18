@@ -5,7 +5,7 @@ import com.pragma.plazacomidas.mall.application.dto.request.UpdatePlateRequestDt
 import com.pragma.plazacomidas.mall.application.dto.response.PlateResponseDto;
 
 public interface IPlateHandler {
-    PlateResponseDto savePlate(PlateRequestDto plateRequestDto);
+    PlateResponseDto savePlate(PlateRequestDto plateRequestDto, Long authenticatedUserId);
 
-    PlateResponseDto updatePlate(Long plateId, UpdatePlateRequestDto updatePlateRequestDto);
+    PlateResponseDto updatePlate(Long plateId, UpdatePlateRequestDto updatePlateRequestDto, Long authenticatedUserId);
 }

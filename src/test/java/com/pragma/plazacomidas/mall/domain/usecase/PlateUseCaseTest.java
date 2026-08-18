@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.PlateModel;
+import com.pragma.plazacomidas.mall.domain.model.RestaurantModel;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
 
@@ -32,33 +33,39 @@ class PlateUseCaseTest {
 
     private PlateUseCase plateUseCase;
 
+    private static final Long OWNER_ID = 1L;
+
     @BeforeEach
     void setUp() {
         plateUseCase = new PlateUseCase(platePersistencePort, restaurantPersistencePort);
     }
 
-    // Método auxiliar para crear un plato válido
     private PlateModel buildValidPlate() {
         return new PlateModel(null, "Hamburguesa doble", 25000, "Doble carne con queso",
                 "http://img.com/burger.png", "Comida rápida", false, 1L);
+    }
+
+    private RestaurantModel buildRestaurantOwnedBy(Long ownerId) {
+        RestaurantModel restaurant = new RestaurantModel();
+        restaurant.setId(1L);
+        restaurant.setOwnerId(ownerId);
+        return restaurant;
     }
 
     // ---------- HAPPY PATH ----------
 
     @Test
     void shouldCreatePlateSuccessfullyWhenDataIsValid() {
-        // Given
         PlateModel plateModel = buildValidPlate();
         PlateModel plateGuardado = new PlateModel(1L, "Hamburguesa doble", 25000, "Doble carne con queso",
                 "http://img.com/burger.png", "Comida rápida", true, 1L);
 
         when(restaurantPersistencePort.existsById(1L)).thenReturn(true);
+        when(restaurantPersistencePort.getRestaurantById(1L)).thenReturn(buildRestaurantOwnedBy(OWNER_ID));
         when(platePersistencePort.savePlate(any(PlateModel.class))).thenReturn(plateGuardado);
 
-        // When
-        PlateModel resultado = plateUseCase.createPlate(plateModel);
+        PlateModel resultado = plateUseCase.createPlate(plateModel, OWNER_ID);
 
-        // Then
         assertEquals(1L, resultado.getId());
         assertTrue(resultado.isActive());
         verify(restaurantPersistencePort, times(1)).existsById(1L);
@@ -66,16 +73,17 @@ class PlateUseCaseTest {
     }
 
     @Test
-    void shuldUpdatePlateSuccesfully(){
+    void shuldUpdatePlateSuccesfully() {
         PlateModel existingPlate = buildValidPlate();
         existingPlate.setId(1L);
 
         when(platePersistencePort.getPlateById(1L)).thenReturn(existingPlate);
-        when(platePersistencePort.savePlate(any(PlateModel.class))).thenAnswer(invocation -> invocation.getArgument(0)); //Esto me devuelve exactamente lo que le pasé como argumento
+        when(restaurantPersistencePort.getRestaurantById(1L)).thenReturn(buildRestaurantOwnedBy(OWNER_ID));
+        when(platePersistencePort.savePlate(any(PlateModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        PlateModel plateModelUpdated = plateUseCase.updatePlate(1L, 20000, "Doble carne ANGUS con queso");
+        PlateModel plateModelUpdated = plateUseCase.updatePlate(1L, 20000, "Doble carne ANGUS con queso", OWNER_ID);
 
-        assertEquals(1L, plateModelUpdated.getId()); //Que no cambie el ID
+        assertEquals(1L, plateModelUpdated.getId());
         assertEquals(20000, plateModelUpdated.getPrice());
         assertEquals("Doble carne ANGUS con queso", plateModelUpdated.getDescription());
     }
@@ -88,7 +96,7 @@ class PlateUseCaseTest {
         plateModel.setName("  ");
 
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.createPlate(plateModel));
+                () -> plateUseCase.createPlate(plateModel, OWNER_ID));
 
         assertEquals("El nombre del plato no puede estar vacío", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
@@ -100,7 +108,7 @@ class PlateUseCaseTest {
         plateModel.setPrice(0);
 
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.createPlate(plateModel));
+                () -> plateUseCase.createPlate(plateModel, OWNER_ID));
 
         assertEquals("El precio del plato debe ser un número entero positivo mayor a 0", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
@@ -112,7 +120,7 @@ class PlateUseCaseTest {
         plateModel.setDescription("");
 
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.createPlate(plateModel));
+                () -> plateUseCase.createPlate(plateModel, OWNER_ID));
 
         assertEquals("La descripción del plato no puede estar vacía", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
@@ -124,7 +132,7 @@ class PlateUseCaseTest {
         plateModel.setUrl(null);
 
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.createPlate(plateModel));
+                () -> plateUseCase.createPlate(plateModel, OWNER_ID));
 
         assertEquals("La URL de la imagen no puede estar vacía", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
@@ -136,7 +144,7 @@ class PlateUseCaseTest {
         plateModel.setCategory(" ");
 
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.createPlate(plateModel));
+                () -> plateUseCase.createPlate(plateModel, OWNER_ID));
 
         assertEquals("La categoría no puede estar vacía", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
@@ -148,7 +156,7 @@ class PlateUseCaseTest {
         plateModel.setRestaurantId(null);
 
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.createPlate(plateModel));
+                () -> plateUseCase.createPlate(plateModel, OWNER_ID));
 
         assertEquals("El plato debe estar asociado a un restaurante", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
@@ -160,28 +168,41 @@ class PlateUseCaseTest {
         when(restaurantPersistencePort.existsById(anyLong())).thenReturn(false);
 
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.createPlate(plateModel));
+                () -> plateUseCase.createPlate(plateModel, OWNER_ID));
 
         assertEquals("El restaurante indicado no existe", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
     }
 
     @Test
-    void shuldThrowExceptionWhenThePriceIsZero(){
+    void shouldThrowExceptionWhenAuthenticatedUserIsNotTheRestaurantOwner() {
+        PlateModel plateModel = buildValidPlate();
+
+        when(restaurantPersistencePort.existsById(1L)).thenReturn(true);
+        when(restaurantPersistencePort.getRestaurantById(1L)).thenReturn(buildRestaurantOwnedBy(OWNER_ID));
+
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.updatePlate(1L, 0, "Doble carne ANGUS con queso"));
+                () -> plateUseCase.createPlate(plateModel, 999L));
+
+        assertEquals("No eres el propietario de este restaurante", exception.getMessage());
+        verify(platePersistencePort, never()).savePlate(any());
+    }
+
+    @Test
+    void shuldThrowExceptionWhenThePriceIsZero() {
+        DomainException exception = assertThrows(DomainException.class,
+                () -> plateUseCase.updatePlate(1L, 0, "Doble carne ANGUS con queso", OWNER_ID));
 
         assertEquals("El precio del plato debe ser entero y positivo", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
     }
 
     @Test
-    void shuldThrowExceptionWhenThedescriptionIsBlank(){
+    void shuldThrowExceptionWhenThedescriptionIsBlank() {
         DomainException exception = assertThrows(DomainException.class,
-                () -> plateUseCase.updatePlate(1L, 10000, ""));
+                () -> plateUseCase.updatePlate(1L, 10000, "", OWNER_ID));
 
         assertEquals("La descripción no puede estar vacía", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
     }
-
 }

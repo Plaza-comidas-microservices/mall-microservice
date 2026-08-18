@@ -3,6 +3,7 @@ package com.pragma.plazacomidas.mall.domain.usecase;
 import com.pragma.plazacomidas.mall.domain.api.IPlateServicePort;
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.PlateModel;
+import com.pragma.plazacomidas.mall.domain.model.RestaurantModel;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
 
@@ -17,7 +18,7 @@ public class PlateUseCase implements IPlateServicePort {
     }
 
     @Override
-    public PlateModel createPlate(PlateModel plateModel) {
+    public PlateModel createPlate(PlateModel plateModel, Long authenticatedUserId) {
         String name = plateModel.getName();
         int price = plateModel.getPrice();
         String description = plateModel.getDescription();
@@ -41,27 +42,33 @@ public class PlateUseCase implements IPlateServicePort {
             throw new DomainException("El restaurante indicado no existe");
         }
 
+        RestaurantModel restaurant = restaurantPersistencePort.getRestaurantById(restaurantId);
+        if (!restaurant.getOwnerId().equals(authenticatedUserId)) {
+            throw new DomainException("No eres el propietario de este restaurante");
+        }
+
         plateModel.setActive(true);
         return platePersistencePort.savePlate(plateModel);
     }
 
     @Override
-    public PlateModel updatePlate(Long plateId, int newPrice, String newDescription) {
-        if(newPrice <= 0){
+    public PlateModel updatePlate(Long plateId, int newPrice, String newDescription, Long authenticatedUserId) {
+        if (newPrice <= 0) {
             throw new DomainException("El precio del plato debe ser entero y positivo");
-        }else if ( newDescription == null || newDescription.isBlank()){
+        } else if (newDescription == null || newDescription.isBlank()) {
             throw new DomainException("La descripción no puede estar vacía");
         }
 
-        //Primero leemos lo que hay en la BD
         PlateModel existingPlate = platePersistencePort.getPlateById(plateId);
 
-        //Luego Modifico los atributos que quiero actualizar
+        RestaurantModel restaurant = restaurantPersistencePort.getRestaurantById(existingPlate.getRestaurantId());
+        if (!restaurant.getOwnerId().equals(authenticatedUserId)) {
+            throw new DomainException("No eres el propietario de este restaurante");
+        }
+
         existingPlate.setPrice(newPrice);
         existingPlate.setDescription(newDescription);
 
-        //Por último Guardo todo el objeto
         return platePersistencePort.savePlate(existingPlate);
-        
     }
 }

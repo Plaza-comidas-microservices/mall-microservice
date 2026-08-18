@@ -2,6 +2,7 @@ package com.pragma.plazacomidas.mall.infrastructure.input.rest;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -37,7 +38,8 @@ public class PlateRestController {
     })
     @PostMapping("/")
     public ResponseEntity<PlateResponseDto> createPlate(@RequestBody PlateRequestDto plateRequestDto) {
-        PlateResponseDto plateResponseDto = plateHandler.savePlate(plateRequestDto);
+        Long authenticatedUserId = getAuthenticatedUserId();
+        PlateResponseDto plateResponseDto = plateHandler.savePlate(plateRequestDto, authenticatedUserId);
         return new ResponseEntity<>(plateResponseDto, HttpStatus.CREATED);
     }
 
@@ -51,7 +53,12 @@ public class PlateRestController {
     })
     @PatchMapping("/{id}")
     public ResponseEntity<PlateResponseDto> updatePlate(@PathVariable Long id, @RequestBody UpdatePlateRequestDto updatePlateRequestDto) {
-        PlateResponseDto plateResponseDto = plateHandler.updatePlate(id, updatePlateRequestDto);
+        Long authenticatedUserId = getAuthenticatedUserId();
+        PlateResponseDto plateResponseDto = plateHandler.updatePlate(id, updatePlateRequestDto, authenticatedUserId);
         return new ResponseEntity<>(plateResponseDto, HttpStatus.OK);
+    }
+
+    private Long getAuthenticatedUserId() {
+        return (Long) SecurityContextHolder.getContext().getAuthentication().getCredentials();
     }
 }
