@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.pragma.plazacomidas.mall.application.dto.request.PlateRequestDto;
 import com.pragma.plazacomidas.mall.application.dto.request.UpdatePlateRequestDto;
+import com.pragma.plazacomidas.mall.application.dto.request.UpdatePlateStatusRequestDto;
 import com.pragma.plazacomidas.mall.application.dto.response.PlateResponseDto;
 import com.pragma.plazacomidas.mall.application.handler.IPlateHandler;
 import com.pragma.plazacomidas.mall.application.mapper.IPlateRequestMapper;
@@ -32,8 +33,13 @@ public class PlateHandler implements IPlateHandler {
 
     @Override
     public PlateResponseDto updatePlate(Long plateId, UpdatePlateRequestDto updatePlateRequestDto, Long authenticatedUserId) {
-        PlateModel plateUpdated = plateServicePort.updatePlate(
-                plateId, updatePlateRequestDto.getPrice(), updatePlateRequestDto.getDescription(), authenticatedUserId);
+        PlateModel plateUpdated = plateServicePort.updatePlate(plateId, updatePlateRequestDto.getPrice(), updatePlateRequestDto.getDescription(), authenticatedUserId);
         return plateResponseMapper.toResponse(plateUpdated);
+    }
+
+    @Override
+    public PlateResponseDto updateStatusPlate(Long plateId, UpdatePlateStatusRequestDto updatePlateStatusRequestDto, Long authenticatedUserId) {
+        PlateModel plateUpdatedStatus = plateServicePort.toggPlateStatus(plateId, updatePlateStatusRequestDto.isActive(), authenticatedUserId);
+        return plateResponseMapper.toResponse(plateUpdatedStatus);
     }
 }

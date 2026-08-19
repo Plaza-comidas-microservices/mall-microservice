@@ -14,6 +14,7 @@ import com.pragma.plazacomidas.mall.application.dto.request.PlateRequestDto;
 import com.pragma.plazacomidas.mall.application.dto.response.PlateResponseDto;
 import com.pragma.plazacomidas.mall.application.handler.IPlateHandler;
 import com.pragma.plazacomidas.mall.application.dto.request.UpdatePlateRequestDto;
+import com.pragma.plazacomidas.mall.application.dto.request.UpdatePlateStatusRequestDto;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -60,5 +61,20 @@ public class PlateRestController {
 
     private Long getAuthenticatedUserId() {
         return (Long) SecurityContextHolder.getContext().getAuthentication().getCredentials();
+    }
+
+    @Operation(summary = "Update the status of an existing plate")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Plate status updated",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = PlateResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Invalid plate data", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Plate not found", content = @Content)
+    })
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<PlateResponseDto> updateStatusPlate(@PathVariable Long id, @RequestBody UpdatePlateStatusRequestDto updatePlateStatusRequestDto) {
+        Long authenticatedUserId = getAuthenticatedUserId();
+        PlateResponseDto plateResponseDto = plateHandler.updateStatusPlate(id, updatePlateStatusRequestDto, authenticatedUserId);
+        return new ResponseEntity<>(plateResponseDto, HttpStatus.OK);
     }
 }
