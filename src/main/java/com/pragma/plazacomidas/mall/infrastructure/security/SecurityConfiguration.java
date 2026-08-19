@@ -28,6 +28,7 @@ public class SecurityConfiguration {
             .and()
             .authorizeHttpRequests(auth -> auth
                 .antMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/v1/restaurant/*").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/v1/restaurant/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.POST, "/api/v1/plate/**").hasRole("OWNER")
                 .antMatchers(HttpMethod.PATCH, "/api/v1/plate/**").hasRole("OWNER")
