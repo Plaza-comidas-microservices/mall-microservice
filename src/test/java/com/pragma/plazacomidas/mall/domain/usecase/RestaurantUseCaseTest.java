@@ -3,6 +3,7 @@ package com.pragma.plazacomidas.mall.domain.usecase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -14,6 +15,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.List;
 
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.RestaurantModel;
@@ -109,5 +112,33 @@ class RestaurantUseCaseTest {
 
         assertEquals("El id del propietario no es válido", exception.getMessage());
         verify(restaurantPersistencePort, never()).saveRestaurant(any());
+    }
+
+    @Test
+    void shouldReturnRestaurantsSuccessfullyWhenPaginationIsValid() {
+        List<RestaurantModel> restaurants = List.of(buildValidRestaurant());
+        when(restaurantPersistencePort.getAllRestaurants(0, 10)).thenReturn(restaurants);
+
+        List<RestaurantModel> result = restaurantUseCase.getAllRestaurants(0, 10);
+
+        assertEquals(1, result.size());
+        verify(restaurantPersistencePort, times(1)).getAllRestaurants(0, 10);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenPageIsNegative() {
+        DomainException exception = assertThrows(DomainException.class,
+                () -> restaurantUseCase.getAllRestaurants(-1, 10));
+
+        assertEquals("El número de página no puede ser negativo", exception.getMessage());
+        verify(restaurantPersistencePort, never()).getAllRestaurants(anyInt(), anyInt());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenSizeIsZeroOrNegative() {
+        DomainException exception = assertThrows(DomainException.class,
+                () -> restaurantUseCase.getAllRestaurants(0, 0));
+
+        assertEquals("El tamaño de página debe ser mayor a 0", exception.getMessage());
     }
 }

@@ -1,5 +1,10 @@
 package com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter;
 
+import java.util.List;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import com.pragma.plazacomidas.mall.domain.model.RestaurantModel;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
 import com.pragma.plazacomidas.mall.infrastructure.exception.NoDataFoundException;
@@ -32,5 +37,12 @@ public class RestaurantJpaAdapter implements IRestaurantPersistencePort {
         return restaurantRepository.findById(restaurantId)
                 .map(restaurantEntityMapper::toRestaurantModel)
                 .orElseThrow(NoDataFoundException::new);
+    }
+
+    @Override
+    public List<RestaurantModel> getAllRestaurants(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name"));
+        return restaurantEntityMapper.toRestaurantModelList(
+                restaurantRepository.findAll(pageRequest).getContent());//el .getcontent descarta otros datos que trae Page, como getTotalPages.
     }
 }

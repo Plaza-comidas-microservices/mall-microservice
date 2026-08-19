@@ -1,5 +1,7 @@
 package com.pragma.plazacomidas.mall.domain.usecase;
 
+import java.util.List;
+
 import com.pragma.plazacomidas.mall.domain.api.IRestaurantServicePort;
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.RestaurantModel;
@@ -48,5 +50,15 @@ public class RestaurantUseCase implements IRestaurantServicePort {
     @Override
     public RestaurantModel getRestaurantById(Long restaurantId) {
         return restaurantPersistencePort.getRestaurantById(restaurantId);
+    }
+
+    @Override
+    public List<RestaurantModel> getAllRestaurants(int page, int size) {
+        if (page < 0) {
+            throw new DomainException("El número de página no puede ser negativo");
+        } else if (size <= 0) {
+            throw new DomainException("El tamaño de página debe ser mayor a 0");
+        }
+        return restaurantPersistencePort.getAllRestaurants(page, size);
     }
 }
