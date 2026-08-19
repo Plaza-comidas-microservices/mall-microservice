@@ -1,5 +1,10 @@
 package com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter;
 
+import java.util.List;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import com.pragma.plazacomidas.mall.domain.model.PlateModel;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.infrastructure.exception.NoDataFoundException;
@@ -28,5 +33,12 @@ public class PlateJpaAdapter implements IPlatePersistencePort {
         PlateEntity plateEntity = plateRepository.findById(plateId)
                 .orElseThrow(NoDataFoundException::new);
         return plateEntityMapper.toPlateModel(plateEntity);
+    }
+
+    @Override
+    public List<PlateModel> getAllPlates(Long restaurantId, String category, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name"));
+        return plateEntityMapper.toPlateModelList(
+                plateRepository.findByRestaurantIdAndOptionalCategory(restaurantId, category, pageRequest).getContent());
     }
 }

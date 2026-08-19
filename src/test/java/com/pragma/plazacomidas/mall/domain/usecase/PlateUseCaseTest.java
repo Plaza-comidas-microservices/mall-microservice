@@ -105,6 +105,18 @@ class PlateUseCaseTest {
         verify(platePersistencePort, times(1)).savePlate(any(PlateModel.class));
     }
 
+    @Test
+    void shouldReturnPlatesSuccessfullyWhenRestaurantExists() {
+        when(restaurantPersistencePort.existsById(1L)).thenReturn(true);
+        when(platePersistencePort.getAllPlates(1L, "Comida rápida", 0, 10))
+                .thenReturn(java.util.List.of(buildValidPlate()));
+
+        java.util.List<PlateModel> result = plateUseCase.getAllPlates(1L, "Comida rápida", 0, 10);
+
+        assertEquals(1, result.size());
+        verify(platePersistencePort, times(1)).getAllPlates(1L, "Comida rápida", 0, 10);
+    }
+
     // ---------- SAD PATHS ----------
 
     @Test
@@ -236,5 +248,23 @@ class PlateUseCaseTest {
 
         assertEquals("No eres el propietario de este restaurante", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenListingPlatesWithoutRestaurantId() {
+        DomainException exception = assertThrows(DomainException.class,
+                () -> plateUseCase.getAllPlates(null, null, 0, 10));
+
+        assertEquals("Debes indicar el restaurante para listar su menú", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenListingPlatesForNonExistingRestaurant() {
+        when(restaurantPersistencePort.existsById(1L)).thenReturn(false);
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> plateUseCase.getAllPlates(1L, null, 0, 10));
+
+        assertEquals("El restaurante indicado no existe", exception.getMessage());
     }
 }

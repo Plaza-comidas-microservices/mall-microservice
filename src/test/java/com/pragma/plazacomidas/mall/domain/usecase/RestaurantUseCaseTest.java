@@ -63,6 +63,17 @@ class RestaurantUseCaseTest {
         verify(restaurantPersistencePort, times(1)).saveRestaurant(any(RestaurantModel.class));
     }
 
+    @Test
+    void shouldReturnRestaurantsSuccessfullyWhenPaginationIsValid() {
+        List<RestaurantModel> restaurants = List.of(buildValidRestaurant());
+        when(restaurantPersistencePort.getAllRestaurants(0, 10)).thenReturn(restaurants);
+
+        List<RestaurantModel> result = restaurantUseCase.getAllRestaurants(0, 10);
+
+        assertEquals(1, result.size());
+        verify(restaurantPersistencePort, times(1)).getAllRestaurants(0, 10);
+    }
+
     // ---------- SAD PATHS ----------
 
     @Test
@@ -112,17 +123,6 @@ class RestaurantUseCaseTest {
 
         assertEquals("El id del propietario no es válido", exception.getMessage());
         verify(restaurantPersistencePort, never()).saveRestaurant(any());
-    }
-
-    @Test
-    void shouldReturnRestaurantsSuccessfullyWhenPaginationIsValid() {
-        List<RestaurantModel> restaurants = List.of(buildValidRestaurant());
-        when(restaurantPersistencePort.getAllRestaurants(0, 10)).thenReturn(restaurants);
-
-        List<RestaurantModel> result = restaurantUseCase.getAllRestaurants(0, 10);
-
-        assertEquals(1, result.size());
-        verify(restaurantPersistencePort, times(1)).getAllRestaurants(0, 10);
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.pragma.plazacomidas.mall.domain.usecase;
 
+import java.util.List;
+
 import com.pragma.plazacomidas.mall.domain.api.IPlateServicePort;
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.PlateModel;
@@ -83,5 +85,19 @@ public class PlateUseCase implements IPlateServicePort {
         existingPlate.setActive(active);
         return platePersistencePort.savePlate(existingPlate);
 
+    }
+
+    @Override
+    public List<PlateModel> getAllPlates(Long restaurantId, String category, int page, int size) {
+        if (restaurantId == null) {
+            throw new DomainException("Debes indicar el restaurante para listar su menú");
+        } else if (!restaurantPersistencePort.existsById(restaurantId)) {
+            throw new DomainException("El restaurante indicado no existe");
+        } else if (page < 0) {
+            throw new DomainException("El número de página no puede ser negativo");
+        } else if (size <= 0) {
+            throw new DomainException("El tamaño de página debe ser mayor a 0");
+        }
+        return platePersistencePort.getAllPlates(restaurantId, category, page, size);
     }
 }
