@@ -1,5 +1,7 @@
 package com.pragma.plazacomidas.mall.infrastructure.out.jpa.mapper;
 
+import java.util.List;
+
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
@@ -12,4 +14,5 @@ import com.pragma.plazacomidas.mall.infrastructure.out.jpa.entity.PlateEntity;
 public interface IPlateEntityMapper {
     PlateEntity toEntity(PlateModel plateModel);
     PlateModel toPlateModel(PlateEntity plateEntity);
+    List<PlateModel> toPlateModelList(List<PlateEntity> plateEntityList);
 }
