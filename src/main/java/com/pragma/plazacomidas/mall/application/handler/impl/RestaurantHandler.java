@@ -1,12 +1,16 @@
 package com.pragma.plazacomidas.mall.application.handler.impl;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.pragma.plazacomidas.mall.application.dto.request.RestaurantRequestDto;
+import com.pragma.plazacomidas.mall.application.dto.response.RestaurantListResponseDto;
 import com.pragma.plazacomidas.mall.application.dto.response.RestaurantResponseDto;
 import com.pragma.plazacomidas.mall.application.dto.response.RestaurantValidationResponseDto;
 import com.pragma.plazacomidas.mall.application.handler.IRestaurantHandler;
+import com.pragma.plazacomidas.mall.application.mapper.IRestaurantListMapper;
 import com.pragma.plazacomidas.mall.application.mapper.IRestaurantRequestMapper;
 import com.pragma.plazacomidas.mall.application.mapper.IRestaurantResponseMapper;
 import com.pragma.plazacomidas.mall.application.mapper.IRestaurantValidationMapper;
@@ -24,6 +28,7 @@ public class RestaurantHandler implements IRestaurantHandler {
     private final IRestaurantRequestMapper restaurantRequestMapper;
     private final IRestaurantResponseMapper restaurantResponseMapper;
     private final IRestaurantValidationMapper restaurantValidationMapper;
+    private final IRestaurantListMapper restaurantListMapper;
 
     @Override
     public RestaurantResponseDto saveRestaurant(RestaurantRequestDto restaurantRequestDto) {
@@ -36,5 +41,11 @@ public class RestaurantHandler implements IRestaurantHandler {
     public RestaurantValidationResponseDto getRestaurantById(Long restaurantId) {
         RestaurantModel restaurantModel = restaurantServicePort.getRestaurantById(restaurantId);
         return restaurantValidationMapper.toResponse(restaurantModel);
+    }
+
+    @Override
+    public List<RestaurantListResponseDto> getAllRestaurants(int page, int size) {
+        List<RestaurantModel> restaurants = restaurantServicePort.getAllRestaurants(page, size);
+        return restaurantListMapper.toResponseList(restaurants);
     }
 }
