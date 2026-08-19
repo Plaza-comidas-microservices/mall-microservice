@@ -71,4 +71,17 @@ public class PlateUseCase implements IPlateServicePort {
 
         return platePersistencePort.savePlate(existingPlate);
     }
+
+    @Override
+    public PlateModel toggPlateStatus(Long plateId, boolean active, Long authenticatedUserId) {
+        PlateModel existingPlate = platePersistencePort.getPlateById(plateId);
+        RestaurantModel restaurant = restaurantPersistencePort.getRestaurantById(existingPlate.getRestaurantId());
+        if(!restaurant.getOwnerId().equals(authenticatedUserId) ){
+            throw new DomainException("No eres el propietario de este restaurante");
+        }
+
+        existingPlate.setActive(active);
+        return platePersistencePort.savePlate(existingPlate);
+
+    }
 }

@@ -88,6 +88,23 @@ class PlateUseCaseTest {
         assertEquals("Doble carne ANGUS con queso", plateModelUpdated.getDescription());
     }
 
+    @Test
+    void shouldToggleStatusSuccessfullyWhenAuthenticatedUserIsTheOwner() {
+        PlateModel existingPlate = buildValidPlate();
+        existingPlate.setId(1L);
+        existingPlate.setActive(true);
+
+        when(platePersistencePort.getPlateById(1L)).thenReturn(existingPlate);
+        when(restaurantPersistencePort.getRestaurantById(1L)).thenReturn(buildRestaurantOwnedBy(OWNER_ID));
+        when(platePersistencePort.savePlate(any(PlateModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        PlateModel result = plateUseCase.toggPlateStatus(1L, false, OWNER_ID);
+
+        assertEquals(1L, result.getId());
+        assertEquals(false, result.isActive());
+        verify(platePersistencePort, times(1)).savePlate(any(PlateModel.class));
+    }
+
     // ---------- SAD PATHS ----------
 
     @Test
@@ -203,6 +220,21 @@ class PlateUseCaseTest {
                 () -> plateUseCase.updatePlate(1L, 10000, "", OWNER_ID));
 
         assertEquals("La descripción no puede estar vacía", exception.getMessage());
+        verify(platePersistencePort, never()).savePlate(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenTogglingStatusAndAuthenticatedUserIsNotTheOwner() {
+        PlateModel existingPlate = buildValidPlate();
+        existingPlate.setId(1L);
+
+        when(platePersistencePort.getPlateById(1L)).thenReturn(existingPlate);
+        when(restaurantPersistencePort.getRestaurantById(1L)).thenReturn(buildRestaurantOwnedBy(OWNER_ID));
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> plateUseCase.toggPlateStatus(1L, false, 999L));
+
+        assertEquals("No eres el propietario de este restaurante", exception.getMessage());
         verify(platePersistencePort, never()).savePlate(any());
     }
 }
