@@ -48,6 +48,10 @@ public class JwtValidator {
         return extractAllClaims(token).get("id", Long.class);
     }
 
+    public Long extractRestaurantId(String token) {
+        return extractAllClaims(token).get("restaurantId", Long.class);
+    }
+
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(signingKey)
