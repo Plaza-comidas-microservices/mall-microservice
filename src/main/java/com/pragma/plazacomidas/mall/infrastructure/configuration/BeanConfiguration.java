@@ -3,13 +3,17 @@ package com.pragma.plazacomidas.mall.infrastructure.configuration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.pragma.plazacomidas.mall.domain.api.IOrderServicePort;
 import com.pragma.plazacomidas.mall.domain.api.IPlateServicePort;
 import com.pragma.plazacomidas.mall.domain.api.IRestaurantServicePort;
+import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IUserValidationPort;
+import com.pragma.plazacomidas.mall.domain.usecase.OrderUseCase;
 import com.pragma.plazacomidas.mall.domain.usecase.PlateUseCase;
 import com.pragma.plazacomidas.mall.domain.usecase.RestaurantUseCase;
+import com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter.OrderJpaAdapter;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter.PlateJpaAdapter;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter.RestaurantJpaAdapter;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.mapper.IOrderEntityMapper;
@@ -53,6 +57,14 @@ public class BeanConfiguration {
         return new PlateUseCase(platePersistencePort(), restaurantPersistencePort());
     }
 
+    @Bean
+    public IOrderPersistencePort orderPersistencePort() {
+        return new OrderJpaAdapter(orderRepository, orderEntityMapper);
+    }
 
+    @Bean
+    public IOrderServicePort orderServicePort() {
+        return new OrderUseCase(orderPersistencePort(), platePersistencePort(), restaurantPersistencePort());
+    }
 
 }
