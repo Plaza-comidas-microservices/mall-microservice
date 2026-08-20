@@ -11,4 +11,6 @@ public interface IOrderPersistencePort {
     boolean hasActiveOrder(Long clientId);
 
     List<OrderModel> getOrdersByRestaurantAndStatus(Long restaurantId, String status, int page, int size);
+
+    OrderModel getOrderById(Long orderId);
 }

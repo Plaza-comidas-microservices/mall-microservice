@@ -48,7 +48,7 @@ class OrderUseCaseTest {
 
     private OrderModel buildValidOrder() {
         OrderItemModel item = new OrderItemModel(1L, 2);
-        return new OrderModel(null, null, RESTAURANT_ID, null, List.of(item));
+        return new OrderModel(null, null, RESTAURANT_ID, null, null, List.of(item));
     }
 
     private PlateModel buildActivePlate(Long restaurantId) {
@@ -64,7 +64,7 @@ class OrderUseCaseTest {
     @Test
     void shouldCreateOrderSuccessfullyWhenDataIsValid() {
         OrderModel orderModel = buildValidOrder();
-        OrderModel savedOrder = new OrderModel(1L, CLIENT_ID, RESTAURANT_ID, "PENDIENTE", orderModel.getItems());
+        OrderModel savedOrder = new OrderModel(1L, CLIENT_ID, RESTAURANT_ID, "PENDIENTE", null, orderModel.getItems());
 
         when(restaurantPersistencePort.existsById(RESTAURANT_ID)).thenReturn(true);
         when(orderPersistencePort.hasActiveOrder(CLIENT_ID)).thenReturn(false);
@@ -75,6 +75,19 @@ class OrderUseCaseTest {
 
         assertEquals(1L, result.getId());
         assertEquals("PENDIENTE", result.getStatus());
+        verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+    }
+
+    @Test
+    void shouldAssignOrderSuccessfullyWhenPendingAndSameRestaurant() {
+        Long employeeId = 5L;
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(buildPendingOrder(RESTAURANT_ID));
+        when(orderPersistencePort.saveOrder(any(OrderModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrderModel result = orderUseCase.assignOrder(1L, employeeId, RESTAURANT_ID);
+
+        assertEquals(employeeId, result.getAssignedEmployeeId());
+        assertEquals("EN_PREPARACION", result.getStatus());
         verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
     }
 
@@ -132,7 +145,7 @@ class OrderUseCaseTest {
 
     @Test
     void shouldThrowExceptionWhenItemQuantityIsZeroOrNegative() {
-        OrderModel orderModel = new OrderModel(null, null, RESTAURANT_ID, null, List.of(new OrderItemModel(1L, 0)));
+        OrderModel orderModel = new OrderModel(null, null, RESTAURANT_ID, null, null, List.of(new OrderItemModel(1L, 0)));
         when(restaurantPersistencePort.existsById(RESTAURANT_ID)).thenReturn(true);
         when(orderPersistencePort.hasActiveOrder(CLIENT_ID)).thenReturn(false);
         when(platePersistencePort.getPlateById(1L)).thenReturn(buildActivePlate(RESTAURANT_ID));
@@ -201,5 +214,37 @@ class OrderUseCaseTest {
                 () -> orderUseCase.getOrdersByRestaurantAndStatus(RESTAURANT_ID, "", 0, 10));
 
         assertEquals("Debes indicar el estado por el cual filtrar", exception.getMessage());
+    }
+
+    private OrderModel buildPendingOrder(Long restaurantId) {
+        OrderModel order = buildValidOrder();
+        order.setId(1L);
+        order.setRestaurantId(restaurantId);
+        order.setStatus("PENDIENTE");
+        return order;
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAssigningOrderFromAnotherRestaurant() {
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(buildPendingOrder(999L));
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.assignOrder(1L, 5L, RESTAURANT_ID));
+
+        assertEquals("Este pedido no pertenece a tu restaurante", exception.getMessage());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenAssigningOrderNotPendiente() {
+        OrderModel order = buildPendingOrder(RESTAURANT_ID);
+        order.setStatus("EN_PREPARACION");
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(order);
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.assignOrder(1L, 5L, RESTAURANT_ID));
+
+        assertEquals("Solo puedes asignarte pedidos que estén en estado PENDIENTE", exception.getMessage());
+        verify(orderPersistencePort, never()).saveOrder(any());
     }
 }

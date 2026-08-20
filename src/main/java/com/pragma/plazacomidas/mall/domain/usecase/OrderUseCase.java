@@ -70,4 +70,20 @@ public class OrderUseCase implements IOrderServicePort{
         return orderPersistencePort.getOrdersByRestaurantAndStatus(restaurantId, status, page, size);
     }
 
+    @Override
+    public OrderModel assignOrder(Long orderId, Long employeeId, Long employeeRestaurantId) {
+        OrderModel order = orderPersistencePort.getOrderById(orderId);
+
+        if (!order.getRestaurantId().equals(employeeRestaurantId)) {
+            throw new DomainException("Este pedido no pertenece a tu restaurante");
+        } else if (!"PENDIENTE".equals(order.getStatus())) {
+            throw new DomainException("Solo puedes asignarte pedidos que estén en estado PENDIENTE");
+        }
+
+        order.setAssignedEmployeeId(employeeId);
+        order.setStatus("EN_PREPARACION");
+
+        return orderPersistencePort.saveOrder(order);
+    }
+
 }

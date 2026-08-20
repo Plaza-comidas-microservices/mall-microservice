@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -62,5 +64,21 @@ public class OrderRestController {
             @RequestParam(defaultValue = "10") int size) {
         Long employeeRestaurantId = (Long) SecurityContextHolder.getContext().getAuthentication().getDetails();
         return ResponseEntity.ok(orderHandler.getOrdersByRestaurantAndStatus(employeeRestaurantId, status, page, size));
+    }
+
+    @Operation(summary = "Assign the authenticated employee to a pending order, moving it to EN_PREPARACION")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order assigned",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OrderListResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Order is not in PENDIENTE or does not belong to this restaurant", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Missing, invalid or insufficient token: only an EMPLOYEE can assign an order", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content)
+    })
+    @PatchMapping("/{id}/assign")
+    public ResponseEntity<OrderListResponseDto> assignOrder(@PathVariable Long id) {
+        Long employeeId = (Long) SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        Long employeeRestaurantId = (Long) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        return ResponseEntity.ok(orderHandler.assignOrder(id, employeeId, employeeRestaurantId));
     }
 }

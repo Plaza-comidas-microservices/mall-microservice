@@ -8,4 +8,6 @@ public interface IOrderServicePort {
     OrderModel createOrder(OrderModel orderModel, Long authenticatedClientId);
 
     List<OrderModel> getOrdersByRestaurantAndStatus(Long restaurantId, String status, int page, int size);
+
+    OrderModel assignOrder(Long orderId, Long employeeId, Long employeeRestaurantId);
 }
