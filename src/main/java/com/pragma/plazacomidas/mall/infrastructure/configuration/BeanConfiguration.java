@@ -12,8 +12,10 @@ import com.pragma.plazacomidas.mall.domain.usecase.PlateUseCase;
 import com.pragma.plazacomidas.mall.domain.usecase.RestaurantUseCase;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter.PlateJpaAdapter;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter.RestaurantJpaAdapter;
+import com.pragma.plazacomidas.mall.infrastructure.out.jpa.mapper.IOrderEntityMapper;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.mapper.IPlateEntityMapper;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.mapper.IRestaurantEntityMapper;
+import com.pragma.plazacomidas.mall.infrastructure.out.jpa.repository.IOrderRepository;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.repository.IPlateRepository;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.repository.IRestaurantRepository;
 
@@ -28,6 +30,8 @@ public class BeanConfiguration {
     private final IUserValidationPort userValidationPort;
     private final IPlateRepository plateRepository;
     private final IPlateEntityMapper plateEntityMapper;
+    private final IOrderRepository orderRepository;
+    private final IOrderEntityMapper orderEntityMapper;
 
     @Bean
     public IRestaurantPersistencePort restaurantPersistencePort() {
@@ -48,5 +52,7 @@ public class BeanConfiguration {
     public IPlateServicePort plateServicePort() {
         return new PlateUseCase(platePersistencePort(), restaurantPersistencePort());
     }
+
+
 
 }
