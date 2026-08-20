@@ -38,6 +38,9 @@ public class OrderEntity {
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
+    @Column(name = "assigned_employee_id", nullable = true)
+    private Long assignedEmployeeId;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItemEntity> items;
 }

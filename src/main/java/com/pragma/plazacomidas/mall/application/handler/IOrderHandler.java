@@ -10,4 +10,6 @@ public interface IOrderHandler {
     OrderResponseDto saveOrder(OrderRequestDto orderRequestDto, Long authenticatedClientId);
 
     List<OrderListResponseDto> getOrdersByRestaurantAndStatus(Long restaurantId, String status, int page, int size);
+
+    OrderListResponseDto assignOrder(Long orderId, Long employeeId, Long employeeRestaurantId);
 }

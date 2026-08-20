@@ -7,6 +7,7 @@ import org.springframework.data.domain.Sort;
 
 import com.pragma.plazacomidas.mall.domain.model.OrderModel;
 import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
+import com.pragma.plazacomidas.mall.infrastructure.exception.NoDataFoundException;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.entity.OrderEntity;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.entity.OrderItemEntity;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.mapper.IOrderEntityMapper;
@@ -45,5 +46,10 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
         PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
         return orderEntityMapper.toOrderModelList(
                 orderRepository.findByRestaurantIdAndStatus(restaurantId, status, pageRequest).getContent());
+    }
+
+    @Override
+    public OrderModel getOrderById(Long orderId) {
+        return orderRepository.findById(orderId).map(orderEntityMapper::toOrderModel).orElseThrow(NoDataFoundException::new);
     }
 }
