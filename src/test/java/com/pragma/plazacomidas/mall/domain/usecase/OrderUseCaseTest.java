@@ -174,4 +174,32 @@ class OrderUseCaseTest {
         assertEquals("Este plato está actualmente fuera del menú", exception.getMessage());
         verify(orderPersistencePort, never()).saveOrder(any());
     }
+
+    @Test
+    void shouldReturnOrdersSuccessfullyWhenFilterIsValid() {
+        OrderModel order = buildValidOrder();
+        when(orderPersistencePort.getOrdersByRestaurantAndStatus(RESTAURANT_ID, "PENDIENTE", 0, 10))
+                .thenReturn(List.of(order));
+
+        List<OrderModel> result = orderUseCase.getOrdersByRestaurantAndStatus(RESTAURANT_ID, "PENDIENTE", 0, 10);
+
+        assertEquals(1, result.size());
+        verify(orderPersistencePort, times(1)).getOrdersByRestaurantAndStatus(RESTAURANT_ID, "PENDIENTE", 0, 10);
+    }
+
+    @Test
+    void shouldThrowExceptionWhenListingOrdersWithoutEmployeeRestaurant() {
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.getOrdersByRestaurantAndStatus(null, "PENDIENTE", 0, 10));
+
+        assertEquals("No perteneces a ningún restaurante", exception.getMessage());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenListingOrdersWithoutStatus() {
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.getOrdersByRestaurantAndStatus(RESTAURANT_ID, "", 0, 10));
+
+        assertEquals("Debes indicar el estado por el cual filtrar", exception.getMessage());
+    }
 }

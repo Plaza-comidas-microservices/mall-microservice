@@ -42,10 +42,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String email = jwtValidator.extractEmail(token);
             String role = jwtValidator.extractRole(token);
             Long id = jwtValidator.extractId(token);
+            Long restaurantId = jwtValidator.extractRestaurantId(token);
 
             var authorities = List.of(new SimpleGrantedAuthority(role));
             var authentication = new UsernamePasswordAuthenticationToken(email, id, authorities);
-
+            authentication.setDetails(restaurantId);
+            
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
 

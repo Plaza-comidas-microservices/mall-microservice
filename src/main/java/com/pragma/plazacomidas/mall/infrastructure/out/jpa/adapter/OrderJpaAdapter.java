@@ -2,6 +2,9 @@ package com.pragma.plazacomidas.mall.infrastructure.out.jpa.adapter;
 
 import java.util.List;
 
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+
 import com.pragma.plazacomidas.mall.domain.model.OrderModel;
 import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
 import com.pragma.plazacomidas.mall.infrastructure.out.jpa.entity.OrderEntity;
@@ -35,5 +38,12 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
     @Override
     public boolean hasActiveOrder(Long clientId) {
         return orderRepository.existsByClientIdAndStatusIn(clientId, ACTIVE_STATUS);
+    }
+
+    @Override
+    public List<OrderModel> getOrdersByRestaurantAndStatus(Long restaurantId, String status, int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "id"));
+        return orderEntityMapper.toOrderModelList(
+                orderRepository.findByRestaurantIdAndStatus(restaurantId, status, pageRequest).getContent());
     }
 }

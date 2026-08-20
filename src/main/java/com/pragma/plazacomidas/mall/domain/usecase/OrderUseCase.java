@@ -1,5 +1,7 @@
 package com.pragma.plazacomidas.mall.domain.usecase;
 
+import java.util.List;
+
 import com.pragma.plazacomidas.mall.domain.api.IOrderServicePort;
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.OrderModel;
@@ -54,6 +56,18 @@ public class OrderUseCase implements IOrderServicePort{
 
     }
 
+    @Override
+    public List<OrderModel> getOrdersByRestaurantAndStatus(Long restaurantId, String status, int page, int size) {
+        if (restaurantId == null) {
+            throw new DomainException("No perteneces a ningún restaurante");
+        } else if (status == null || status.isBlank()) {
+            throw new DomainException("Debes indicar el estado por el cual filtrar");
+        } else if (page < 0) {
+            throw new DomainException("El número de página no puede ser negativo");
+        } else if (size <= 0) {
+            throw new DomainException("El tamaño de página debe ser mayor a 0");
+        }
+        return orderPersistencePort.getOrdersByRestaurantAndStatus(restaurantId, status, page, size);
+    }
 
-    
 }

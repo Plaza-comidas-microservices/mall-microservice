@@ -15,4 +15,5 @@ public interface IOrderEntityMapper {
     OrderEntity toEntity(OrderModel orderModel);
     OrderModel toOrderModel(OrderEntity orderEntity);
     List<OrderItemModel> toOrderItemModelList(List<OrderItemEntity> orderItemEntityList);
+    List<OrderModel> toOrderModelList(List<OrderEntity> orderEntityList);
 }
