@@ -45,4 +45,10 @@ public class OrderHandler implements IOrderHandler {
         OrderModel updatedOrder = orderServicePort.assignOrder(orderId, employeeId, employeeRestaurantId);
         return orderListMapper.toResponse(updatedOrder);
     }
+
+    @Override
+    public OrderListResponseDto markOrderAsReady(Long orderId, Long employeeId, Long employeeRestaurantId) {
+        OrderModel updatedOrder = orderServicePort.markOrderAsReady(orderId, employeeId, employeeRestaurantId);
+        return orderListMapper.toResponse(updatedOrder);
+    }
 }

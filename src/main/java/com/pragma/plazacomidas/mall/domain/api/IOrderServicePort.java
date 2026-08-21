@@ -10,4 +10,6 @@ public interface IOrderServicePort {
     List<OrderModel> getOrdersByRestaurantAndStatus(Long restaurantId, String status, int page, int size);
 
     OrderModel assignOrder(Long orderId, Long employeeId, Long employeeRestaurantId);
+
+    OrderModel markOrderAsReady(Long orderId, Long employeeId, Long employeeRestaurantId);
 }

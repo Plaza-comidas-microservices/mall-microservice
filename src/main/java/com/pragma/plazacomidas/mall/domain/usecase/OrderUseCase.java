@@ -1,11 +1,14 @@
 package com.pragma.plazacomidas.mall.domain.usecase;
 
+import java.security.SecureRandom;
 import java.util.List;
 
 import com.pragma.plazacomidas.mall.domain.api.IOrderServicePort;
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.OrderModel;
 import com.pragma.plazacomidas.mall.domain.model.PlateModel;
+import com.pragma.plazacomidas.mall.domain.spi.IClientContactPort;
+import com.pragma.plazacomidas.mall.domain.spi.INotificationPort;
 import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
@@ -13,14 +16,24 @@ import com.pragma.plazacomidas.mall.domain.model.OrderItemModel;
 
 public class OrderUseCase implements IOrderServicePort{
 
+    private static final String SECURITY_PIN_DIGITS = "0123456789";
+    private static final int SECURITY_PIN_LENGTH = 6;
+
     private final IOrderPersistencePort orderPersistencePort;
     private final IPlatePersistencePort platePersistencePort;
     private final IRestaurantPersistencePort restaurantPersistencePort;
+    private final IClientContactPort clientContactPort;
+    private final INotificationPort notificationPort;
+    private final SecureRandom secureRandom = new SecureRandom();
 
-    public OrderUseCase (IOrderPersistencePort orderPersistencePort, IPlatePersistencePort platePersistencePort, IRestaurantPersistencePort restaurantPersistencePort){
+    public OrderUseCase (IOrderPersistencePort orderPersistencePort, IPlatePersistencePort platePersistencePort,
+        IRestaurantPersistencePort restaurantPersistencePort, IClientContactPort clientContactPort,
+        INotificationPort notificationPort){
         this.orderPersistencePort = orderPersistencePort;
         this.platePersistencePort = platePersistencePort;
         this.restaurantPersistencePort = restaurantPersistencePort;
+        this.clientContactPort = clientContactPort;
+        this.notificationPort = notificationPort;
     }
 
     @Override
@@ -84,6 +97,34 @@ public class OrderUseCase implements IOrderServicePort{
         order.setStatus("EN_PREPARACION");
 
         return orderPersistencePort.saveOrder(order);
+    }
+
+    @Override
+    public OrderModel markOrderAsReady(Long orderId, Long employeeId, Long employeeRestaurantId) {
+        OrderModel order = orderPersistencePort.getOrderById(orderId);
+
+        if (!order.getRestaurantId().equals(employeeRestaurantId)) {
+            throw new DomainException("Este pedido no pertenece a tu restaurante");
+        } else if (!"EN_PREPARACION".equals(order.getStatus())) {
+            throw new DomainException("Solo puedes marcar como listo un pedido que esté en preparación");
+        }
+
+        String securityPin = generateSecurityPin();
+        String clientPhone = clientContactPort.getClientPhone(order.getClientId());
+        notificationPort.sendOrderReadySms(clientPhone, securityPin);
+
+        order.setStatus("LISTO");
+        order.setSecurityPin(securityPin);
+
+        return orderPersistencePort.saveOrder(order);
+    }
+
+    private String generateSecurityPin() {
+        StringBuilder pin = new StringBuilder(SECURITY_PIN_LENGTH);
+        for (int i = 0; i < SECURITY_PIN_LENGTH; i++) {
+            pin.append(SECURITY_PIN_DIGITS.charAt(secureRandom.nextInt(SECURITY_PIN_DIGITS.length())));
+        }
+        return pin.toString();
     }
 
 }

@@ -41,6 +41,9 @@ public class OrderEntity {
     @Column(name = "assigned_employee_id", nullable = true)
     private Long assignedEmployeeId;
 
+    @Column(name = "security_pin", nullable = true, length = 6)
+    private String securityPin;
+
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItemEntity> items;
 }
