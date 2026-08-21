@@ -81,4 +81,20 @@ public class OrderRestController {
         Long employeeRestaurantId = (Long) SecurityContextHolder.getContext().getAuthentication().getDetails();
         return ResponseEntity.ok(orderHandler.assignOrder(id, employeeId, employeeRestaurantId));
     }
+
+    @Operation(summary = "Mark an order as ready and notify the client via SMS with the security pin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order marked as ready",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OrderListResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Order is not in EN_PREPARACION or does not belong to this restaurant", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Missing, invalid or insufficient token: only an EMPLOYEE can mark an order as ready", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content)
+    })
+    @PatchMapping("/{id}/ready")
+    public ResponseEntity<OrderListResponseDto> markOrderAsReady(@PathVariable Long id) {
+        Long employeeId = (Long) SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        Long employeeRestaurantId = (Long) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        return ResponseEntity.ok(orderHandler.markOrderAsReady(id, employeeId, employeeRestaurantId));
+    }
 }

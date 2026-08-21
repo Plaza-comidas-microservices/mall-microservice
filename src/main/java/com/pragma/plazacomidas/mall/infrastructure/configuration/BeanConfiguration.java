@@ -6,6 +6,8 @@ import org.springframework.context.annotation.Configuration;
 import com.pragma.plazacomidas.mall.domain.api.IOrderServicePort;
 import com.pragma.plazacomidas.mall.domain.api.IPlateServicePort;
 import com.pragma.plazacomidas.mall.domain.api.IRestaurantServicePort;
+import com.pragma.plazacomidas.mall.domain.spi.IClientContactPort;
+import com.pragma.plazacomidas.mall.domain.spi.INotificationPort;
 import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
@@ -32,6 +34,8 @@ public class BeanConfiguration {
     private final IRestaurantRepository restaurantRepository;
     private final IRestaurantEntityMapper restaurantEntityMapper;
     private final IUserValidationPort userValidationPort;
+    private final IClientContactPort clientContactPort;
+    private final INotificationPort notificationPort;
     private final IPlateRepository plateRepository;
     private final IPlateEntityMapper plateEntityMapper;
     private final IOrderRepository orderRepository;
@@ -64,7 +68,8 @@ public class BeanConfiguration {
 
     @Bean
     public IOrderServicePort orderServicePort() {
-        return new OrderUseCase(orderPersistencePort(), platePersistencePort(), restaurantPersistencePort());
+        return new OrderUseCase(orderPersistencePort(), platePersistencePort(), restaurantPersistencePort(),
+            clientContactPort, notificationPort);
     }
 
 }

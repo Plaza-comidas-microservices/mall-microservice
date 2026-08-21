@@ -3,6 +3,8 @@ package com.pragma.plazacomidas.mall.domain.usecase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -20,6 +22,8 @@ import com.pragma.plazacomidas.mall.domain.exception.DomainException;
 import com.pragma.plazacomidas.mall.domain.model.OrderItemModel;
 import com.pragma.plazacomidas.mall.domain.model.OrderModel;
 import com.pragma.plazacomidas.mall.domain.model.PlateModel;
+import com.pragma.plazacomidas.mall.domain.spi.IClientContactPort;
+import com.pragma.plazacomidas.mall.domain.spi.INotificationPort;
 import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
@@ -36,6 +40,12 @@ class OrderUseCaseTest {
     @Mock
     private IRestaurantPersistencePort restaurantPersistencePort;
 
+    @Mock
+    private IClientContactPort clientContactPort;
+
+    @Mock
+    private INotificationPort notificationPort;
+
     private OrderUseCase orderUseCase;
 
     private static final Long CLIENT_ID = 1L;
@@ -43,12 +53,13 @@ class OrderUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        orderUseCase = new OrderUseCase(orderPersistencePort, platePersistencePort, restaurantPersistencePort);
+        orderUseCase = new OrderUseCase(orderPersistencePort, platePersistencePort, restaurantPersistencePort,
+            clientContactPort, notificationPort);
     }
 
     private OrderModel buildValidOrder() {
         OrderItemModel item = new OrderItemModel(1L, 2);
-        return new OrderModel(null, null, RESTAURANT_ID, null, null, List.of(item));
+        return new OrderModel(null, null, RESTAURANT_ID, null, null, null, List.of(item));
     }
 
     private PlateModel buildActivePlate(Long restaurantId) {
@@ -64,7 +75,7 @@ class OrderUseCaseTest {
     @Test
     void shouldCreateOrderSuccessfullyWhenDataIsValid() {
         OrderModel orderModel = buildValidOrder();
-        OrderModel savedOrder = new OrderModel(1L, CLIENT_ID, RESTAURANT_ID, "PENDIENTE", null, orderModel.getItems());
+        OrderModel savedOrder = new OrderModel(1L, CLIENT_ID, RESTAURANT_ID, "PENDIENTE", null, null, orderModel.getItems());
 
         when(restaurantPersistencePort.existsById(RESTAURANT_ID)).thenReturn(true);
         when(orderPersistencePort.hasActiveOrder(CLIENT_ID)).thenReturn(false);
@@ -145,7 +156,7 @@ class OrderUseCaseTest {
 
     @Test
     void shouldThrowExceptionWhenItemQuantityIsZeroOrNegative() {
-        OrderModel orderModel = new OrderModel(null, null, RESTAURANT_ID, null, null, List.of(new OrderItemModel(1L, 0)));
+        OrderModel orderModel = new OrderModel(null, null, RESTAURANT_ID, null, null, null, List.of(new OrderItemModel(1L, 0)));
         when(restaurantPersistencePort.existsById(RESTAURANT_ID)).thenReturn(true);
         when(orderPersistencePort.hasActiveOrder(CLIENT_ID)).thenReturn(false);
         when(platePersistencePort.getPlateById(1L)).thenReturn(buildActivePlate(RESTAURANT_ID));
@@ -245,6 +256,69 @@ class OrderUseCaseTest {
                 () -> orderUseCase.assignOrder(1L, 5L, RESTAURANT_ID));
 
         assertEquals("Solo puedes asignarte pedidos que estén en estado PENDIENTE", exception.getMessage());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    private OrderModel buildOrderInPreparation(Long restaurantId) {
+        OrderModel order = buildPendingOrder(restaurantId);
+        order.setClientId(CLIENT_ID);
+        order.setStatus("EN_PREPARACION");
+        order.setAssignedEmployeeId(5L);
+        return order;
+    }
+
+    @Test
+    void shouldMarkOrderAsReadySuccessfullyWhenInPreparationAndSameRestaurant() {
+        Long employeeId = 5L;
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(buildOrderInPreparation(RESTAURANT_ID));
+        when(clientContactPort.getClientPhone(CLIENT_ID)).thenReturn("+573001234567");
+        when(orderPersistencePort.saveOrder(any(OrderModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrderModel result = orderUseCase.markOrderAsReady(1L, employeeId, RESTAURANT_ID);
+
+        assertEquals("LISTO", result.getStatus());
+        assertEquals(6, result.getSecurityPin().length());
+        verify(notificationPort, times(1)).sendOrderReadySms(eq("+573001234567"), any());
+        verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMarkingReadyFromAnotherRestaurant() {
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(buildOrderInPreparation(999L));
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.markOrderAsReady(1L, 5L, RESTAURANT_ID));
+
+        assertEquals("Este pedido no pertenece a tu restaurante", exception.getMessage());
+        verify(notificationPort, never()).sendOrderReadySms(any(), any());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenMarkingReadyOrderNotInPreparation() {
+        OrderModel order = buildOrderInPreparation(RESTAURANT_ID);
+        order.setStatus("PENDIENTE");
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(order);
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.markOrderAsReady(1L, 5L, RESTAURANT_ID));
+
+        assertEquals("Solo puedes marcar como listo un pedido que esté en preparación", exception.getMessage());
+        verify(notificationPort, never()).sendOrderReadySms(any(), any());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    @Test
+    void shouldNotMarkOrderAsReadyWhenNotificationFails() {
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(buildOrderInPreparation(RESTAURANT_ID));
+        when(clientContactPort.getClientPhone(CLIENT_ID)).thenReturn("+573001234567");
+        doThrow(new DomainException("El servicio de mensajería no está disponible ahora"))
+                .when(notificationPort).sendOrderReadySms(any(), any());
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.markOrderAsReady(1L, 5L, RESTAURANT_ID));
+
+        assertEquals("El servicio de mensajería no está disponible ahora", exception.getMessage());
         verify(orderPersistencePort, never()).saveOrder(any());
     }
 }

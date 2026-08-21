@@ -12,4 +12,6 @@ public interface IOrderHandler {
     List<OrderListResponseDto> getOrdersByRestaurantAndStatus(Long restaurantId, String status, int page, int size);
 
     OrderListResponseDto assignOrder(Long orderId, Long employeeId, Long employeeRestaurantId);
+
+    OrderListResponseDto markOrderAsReady(Long orderId, Long employeeId, Long employeeRestaurantId);
 }

@@ -7,11 +7,12 @@ import org.springframework.web.client.ResourceAccessException;
 import org.springframework.web.client.RestTemplate;
 
 import com.pragma.plazacomidas.mall.domain.exception.DomainException;
+import com.pragma.plazacomidas.mall.domain.spi.IClientContactPort;
 import com.pragma.plazacomidas.mall.domain.spi.IUserValidationPort;
 
 //Al hacerlo con component no es necesario registrar el bean en el beanconfig ya que el Spring lo detecta solo
-@Component 
-public class UserRestConsumerAdapter implements IUserValidationPort{
+@Component
+public class UserRestConsumerAdapter implements IUserValidationPort, IClientContactPort {
 
     private static final String ROLE_OWNER = "ROLE_OWNER";
 
@@ -42,6 +43,20 @@ public class UserRestConsumerAdapter implements IUserValidationPort{
         }
     }
 
-    
+    @Override
+    public String getClientPhone(Long clientId) {
+        try {
+            String url = userServiceUrl + "/api/v1/client/" + clientId;
+            ClientContactResponse response = restTemplate.getForObject(url, ClientContactResponse.class);
+            if (response == null) {
+                throw new DomainException("No se pudo obtener el teléfono del cliente");
+            }
+            return response.getPhone();
+        } catch (HttpClientErrorException.NotFound e) {
+            throw new DomainException("El cliente no existe");
+        } catch (ResourceAccessException e) {
+            throw new DomainException("No se pudo obtener el teléfono del cliente, el servicio parece no estar disponible ahora");
+        }
+    }
 
 }

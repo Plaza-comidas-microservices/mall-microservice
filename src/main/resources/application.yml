@@ -18,5 +18,9 @@ users:
   service:
     url: http://localhost:8081
 
+messaging:
+  service:
+    url: http://localhost:8083
+
 jwt:
   secret: "qasshtipuuwnmcbwjcalibcieebnjolño29jne9djsallsdj-sdoo-ksks-o"
