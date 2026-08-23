@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.pragma.plazacomidas.mall.application.dto.request.DeliverOrderRequestDto;
 import com.pragma.plazacomidas.mall.application.dto.request.OrderRequestDto;
 import com.pragma.plazacomidas.mall.application.dto.response.OrderListResponseDto;
 import com.pragma.plazacomidas.mall.application.dto.response.OrderResponseDto;
@@ -49,6 +50,12 @@ public class OrderHandler implements IOrderHandler {
     @Override
     public OrderListResponseDto markOrderAsReady(Long orderId, Long employeeId, Long employeeRestaurantId) {
         OrderModel updatedOrder = orderServicePort.markOrderAsReady(orderId, employeeId, employeeRestaurantId);
+        return orderListMapper.toResponse(updatedOrder);
+    }
+
+    @Override
+    public OrderListResponseDto deliverOrder(Long orderId, Long employeeRestaurantId, DeliverOrderRequestDto deliverOrderRequestDto) {
+        OrderModel updatedOrder = orderServicePort.deliverOrder(orderId, employeeRestaurantId, deliverOrderRequestDto.getSecurityPin());
         return orderListMapper.toResponse(updatedOrder);
     }
 }

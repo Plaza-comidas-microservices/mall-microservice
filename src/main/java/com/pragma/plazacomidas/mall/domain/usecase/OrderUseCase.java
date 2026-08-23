@@ -119,6 +119,23 @@ public class OrderUseCase implements IOrderServicePort{
         return orderPersistencePort.saveOrder(order);
     }
 
+    @Override
+    public OrderModel deliverOrder(Long orderId, Long employeeRestaurantId, String securityPin) {
+        OrderModel order = orderPersistencePort.getOrderById(orderId);
+
+        if (!order.getRestaurantId().equals(employeeRestaurantId)) {
+            throw new DomainException("Este pedido no pertenece a tu restaurante");
+        } else if (!"LISTO".equals(order.getStatus())) {
+            throw new DomainException("Solo puedes entregar pedidos que estén en estado LISTO");
+        } else if (securityPin == null || !securityPin.equals(order.getSecurityPin())) {
+            throw new DomainException("El pin de seguridad no es correcto");
+        }
+
+        order.setStatus("ENTREGADO");
+
+        return orderPersistencePort.saveOrder(order);
+    }
+
     private String generateSecurityPin() {
         StringBuilder pin = new StringBuilder(SECURITY_PIN_LENGTH);
         for (int i = 0; i < SECURITY_PIN_LENGTH; i++) {

@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.pragma.plazacomidas.mall.application.dto.request.DeliverOrderRequestDto;
 import com.pragma.plazacomidas.mall.application.dto.request.OrderRequestDto;
 import com.pragma.plazacomidas.mall.application.dto.response.OrderListResponseDto;
 import com.pragma.plazacomidas.mall.application.dto.response.OrderResponseDto;
@@ -96,5 +97,20 @@ public class OrderRestController {
         Long employeeId = (Long) SecurityContextHolder.getContext().getAuthentication().getCredentials();
         Long employeeRestaurantId = (Long) SecurityContextHolder.getContext().getAuthentication().getDetails();
         return ResponseEntity.ok(orderHandler.markOrderAsReady(id, employeeId, employeeRestaurantId));
+    }
+
+    @Operation(summary = "Deliver an order after validating the client's security pin")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order delivered",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OrderListResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Order is not in LISTO, does not belong to this restaurant, or the security pin is incorrect", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Missing, invalid or insufficient token: only an EMPLOYEE can deliver an order", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content)
+    })
+    @PatchMapping("/{id}/deliver")
+    public ResponseEntity<OrderListResponseDto> deliverOrder(@PathVariable Long id, @RequestBody DeliverOrderRequestDto deliverOrderRequestDto) {
+        Long employeeRestaurantId = (Long) SecurityContextHolder.getContext().getAuthentication().getDetails();
+        return ResponseEntity.ok(orderHandler.deliverOrder(id, employeeRestaurantId, deliverOrderRequestDto));
     }
 }

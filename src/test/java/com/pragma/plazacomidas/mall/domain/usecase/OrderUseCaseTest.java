@@ -70,6 +70,13 @@ class OrderUseCaseTest {
         return plate;
     }
 
+     private OrderModel buildReadyOrder(Long restaurantId, String securityPin) {
+        OrderModel order = buildOrderInPreparation(restaurantId);
+        order.setStatus("LISTO");
+        order.setSecurityPin(securityPin);
+        return order;
+    }
+
     // ---------- HAPPY PATH ----------
 
     @Test
@@ -99,6 +106,17 @@ class OrderUseCaseTest {
 
         assertEquals(employeeId, result.getAssignedEmployeeId());
         assertEquals("EN_PREPARACION", result.getStatus());
+        verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+    }
+
+    @Test
+    void shouldDeliverOrderSuccessfullyWhenPinIsCorrect() {
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(buildReadyOrder(RESTAURANT_ID, "123456"));
+        when(orderPersistencePort.saveOrder(any(OrderModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrderModel result = orderUseCase.deliverOrder(1L, RESTAURANT_ID, "123456");
+
+        assertEquals("ENTREGADO", result.getStatus());
         verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
     }
 
@@ -319,6 +337,41 @@ class OrderUseCaseTest {
                 () -> orderUseCase.markOrderAsReady(1L, 5L, RESTAURANT_ID));
 
         assertEquals("El servicio de mensajería no está disponible ahora", exception.getMessage());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeliveringOrderFromAnotherRestaurant() {
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(buildReadyOrder(999L, "123456"));
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.deliverOrder(1L, RESTAURANT_ID, "123456"));
+
+        assertEquals("Este pedido no pertenece a tu restaurante", exception.getMessage());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenDeliveringOrderNotReady() {
+        OrderModel order = buildReadyOrder(RESTAURANT_ID, "123456");
+        order.setStatus("EN_PREPARACION");
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(order);
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.deliverOrder(1L, RESTAURANT_ID, "123456"));
+
+        assertEquals("Solo puedes entregar pedidos que estén en estado LISTO", exception.getMessage());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenSecurityPinIsIncorrect() {
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(buildReadyOrder(RESTAURANT_ID, "123456"));
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.deliverOrder(1L, RESTAURANT_ID, "000000"));
+
+        assertEquals("El pin de seguridad no es correcto", exception.getMessage());
         verify(orderPersistencePort, never()).saveOrder(any());
     }
 }
