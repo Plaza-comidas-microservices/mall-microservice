@@ -136,6 +136,21 @@ public class OrderUseCase implements IOrderServicePort{
         return orderPersistencePort.saveOrder(order);
     }
 
+    @Override
+    public OrderModel cancelOrder(Long orderId, Long authenticatedClientId) {
+        OrderModel order = orderPersistencePort.getOrderById(orderId);
+
+        if (!order.getClientId().equals(authenticatedClientId)) {
+            throw new DomainException("Este pedido no te pertenece");
+        } else if (!"PENDIENTE".equals(order.getStatus())) {
+            throw new DomainException("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse");
+        }
+
+        order.setStatus("CANCELADO");
+
+        return orderPersistencePort.saveOrder(order);
+    }
+
     private String generateSecurityPin() {
         StringBuilder pin = new StringBuilder(SECURITY_PIN_LENGTH);
         for (int i = 0; i < SECURITY_PIN_LENGTH; i++) {

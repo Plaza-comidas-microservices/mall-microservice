@@ -113,4 +113,19 @@ public class OrderRestController {
         Long employeeRestaurantId = (Long) SecurityContextHolder.getContext().getAuthentication().getDetails();
         return ResponseEntity.ok(orderHandler.deliverOrder(id, employeeRestaurantId, deliverOrderRequestDto));
     }
+
+    @Operation(summary = "Cancel an order that is still PENDIENTE")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Order cancelled",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = OrderListResponseDto.class))),
+            @ApiResponse(responseCode = "400", description = "Order does not belong to you or is no longer PENDIENTE", content = @Content),
+            @ApiResponse(responseCode = "403", description = "Missing, invalid or insufficient token: only a CLIENT can cancel their own order", content = @Content),
+            @ApiResponse(responseCode = "404", description = "Order not found", content = @Content)
+    })
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<OrderListResponseDto> cancelOrder(@PathVariable Long id) {
+        Long authenticatedClientId = (Long) SecurityContextHolder.getContext().getAuthentication().getCredentials();
+        return ResponseEntity.ok(orderHandler.cancelOrder(id, authenticatedClientId));
+    }
 }
