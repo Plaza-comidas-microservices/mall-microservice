@@ -119,6 +119,19 @@ class OrderUseCaseTest {
         assertEquals("ENTREGADO", result.getStatus());
         verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
     }
+    
+    @Test
+    void shouldCancelOrderSuccessfullyWhenPendingAndOwnedByClient() {
+        OrderModel order = buildPendingOrder(RESTAURANT_ID);
+        order.setClientId(CLIENT_ID);
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(order);
+        when(orderPersistencePort.saveOrder(any(OrderModel.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        OrderModel result = orderUseCase.cancelOrder(1L, CLIENT_ID);
+
+        assertEquals("CANCELADO", result.getStatus());
+        verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+    }
 
     // ---------- SAD PATHS ----------
 
@@ -372,6 +385,31 @@ class OrderUseCaseTest {
                 () -> orderUseCase.deliverOrder(1L, RESTAURANT_ID, "000000"));
 
         assertEquals("El pin de seguridad no es correcto", exception.getMessage());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCancellingOrderThatDoesNotBelongToClient() {
+        OrderModel order = buildPendingOrder(RESTAURANT_ID);
+        order.setClientId(999L);
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(order);
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.cancelOrder(1L, CLIENT_ID));
+
+        assertEquals("Este pedido no te pertenece", exception.getMessage());
+        verify(orderPersistencePort, never()).saveOrder(any());
+    }
+
+    @Test
+    void shouldThrowExceptionWhenCancellingOrderNotPendiente() {
+        OrderModel order = buildOrderInPreparation(RESTAURANT_ID);
+        when(orderPersistencePort.getOrderById(1L)).thenReturn(order);
+
+        DomainException exception = assertThrows(DomainException.class,
+                () -> orderUseCase.cancelOrder(1L, CLIENT_ID));
+
+        assertEquals("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse", exception.getMessage());
         verify(orderPersistencePort, never()).saveOrder(any());
     }
 }

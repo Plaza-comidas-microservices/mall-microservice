@@ -34,6 +34,7 @@ public class SecurityConfiguration {
                 .antMatchers(HttpMethod.PATCH, "/api/v1/plate/**").hasRole("OWNER")
                 .antMatchers(HttpMethod.POST, "/api/v1/order/**").hasRole("CLIENT")
                 .antMatchers(HttpMethod.GET, "/api/v1/order/**").hasRole("EMPLOYEE")
+                .antMatchers(HttpMethod.PATCH, "/api/v1/order/*/cancel").hasRole("CLIENT")
                 .antMatchers(HttpMethod.PATCH, "/api/v1/order/**").hasRole("EMPLOYEE")
                 .anyRequest().authenticated()
             )
