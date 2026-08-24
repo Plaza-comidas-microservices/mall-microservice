@@ -22,5 +22,9 @@ messaging:
   service:
     url: http://localhost:8083
 
+traceability:
+  service:
+    url: http://localhost:8084
+
 jwt:
   secret: "qasshtipuuwnmcbwjcalibcieebnjolño29jne9djsallsdj-sdoo-ksks-o"

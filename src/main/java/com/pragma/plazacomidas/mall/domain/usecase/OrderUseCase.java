@@ -12,6 +12,7 @@ import com.pragma.plazacomidas.mall.domain.spi.INotificationPort;
 import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
+import com.pragma.plazacomidas.mall.domain.spi.ITraceabilityPort;
 import com.pragma.plazacomidas.mall.domain.model.OrderItemModel;
 
 public class OrderUseCase implements IOrderServicePort{
@@ -24,16 +25,18 @@ public class OrderUseCase implements IOrderServicePort{
     private final IRestaurantPersistencePort restaurantPersistencePort;
     private final IClientContactPort clientContactPort;
     private final INotificationPort notificationPort;
+    private final ITraceabilityPort traceabilityPort;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public OrderUseCase (IOrderPersistencePort orderPersistencePort, IPlatePersistencePort platePersistencePort,
         IRestaurantPersistencePort restaurantPersistencePort, IClientContactPort clientContactPort,
-        INotificationPort notificationPort){
+        INotificationPort notificationPort, ITraceabilityPort traceabilityPort){
         this.orderPersistencePort = orderPersistencePort;
         this.platePersistencePort = platePersistencePort;
         this.restaurantPersistencePort = restaurantPersistencePort;
         this.clientContactPort = clientContactPort;
         this.notificationPort = notificationPort;
+        this.traceabilityPort = traceabilityPort;
     }
 
     @Override
@@ -62,10 +65,13 @@ public class OrderUseCase implements IOrderServicePort{
             
         }
 
-        orderModel.setClientId(authenticatedClientId); 
+        orderModel.setClientId(authenticatedClientId);
         orderModel.setStatus("PENDIENTE");
 
-        return orderPersistencePort.saveOrder(orderModel);
+        OrderModel savedOrder = orderPersistencePort.saveOrder(orderModel);
+        traceabilityPort.logStatusChange(savedOrder.getId(), savedOrder.getClientId(), null, savedOrder.getStatus());
+
+        return savedOrder;
 
     }
 
@@ -93,10 +99,14 @@ public class OrderUseCase implements IOrderServicePort{
             throw new DomainException("Solo puedes asignarte pedidos que estén en estado PENDIENTE");
         }
 
+        String previousStatus = order.getStatus();
         order.setAssignedEmployeeId(employeeId);
         order.setStatus("EN_PREPARACION");
 
-        return orderPersistencePort.saveOrder(order);
+        OrderModel savedOrder = orderPersistencePort.saveOrder(order);
+        traceabilityPort.logStatusChange(savedOrder.getId(), savedOrder.getClientId(), previousStatus, savedOrder.getStatus());
+
+        return savedOrder;
     }
 
     @Override
@@ -109,6 +119,7 @@ public class OrderUseCase implements IOrderServicePort{
             throw new DomainException("Solo puedes marcar como listo un pedido que esté en preparación");
         }
 
+        String previousStatus = order.getStatus();
         String securityPin = generateSecurityPin();
         String clientPhone = clientContactPort.getClientPhone(order.getClientId());
         notificationPort.sendOrderReadySms(clientPhone, securityPin);
@@ -116,7 +127,10 @@ public class OrderUseCase implements IOrderServicePort{
         order.setStatus("LISTO");
         order.setSecurityPin(securityPin);
 
-        return orderPersistencePort.saveOrder(order);
+        OrderModel savedOrder = orderPersistencePort.saveOrder(order);
+        traceabilityPort.logStatusChange(savedOrder.getId(), savedOrder.getClientId(), previousStatus, savedOrder.getStatus());
+
+        return savedOrder;
     }
 
     @Override
@@ -131,9 +145,13 @@ public class OrderUseCase implements IOrderServicePort{
             throw new DomainException("El pin de seguridad no es correcto");
         }
 
+        String previousStatus = order.getStatus();
         order.setStatus("ENTREGADO");
 
-        return orderPersistencePort.saveOrder(order);
+        OrderModel savedOrder = orderPersistencePort.saveOrder(order);
+        traceabilityPort.logStatusChange(savedOrder.getId(), savedOrder.getClientId(), previousStatus, savedOrder.getStatus());
+
+        return savedOrder;
     }
 
     @Override
@@ -146,9 +164,13 @@ public class OrderUseCase implements IOrderServicePort{
             throw new DomainException("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse");
         }
 
+        String previousStatus = order.getStatus();
         order.setStatus("CANCELADO");
 
-        return orderPersistencePort.saveOrder(order);
+        OrderModel savedOrder = orderPersistencePort.saveOrder(order);
+        traceabilityPort.logStatusChange(savedOrder.getId(), savedOrder.getClientId(), previousStatus, savedOrder.getStatus());
+
+        return savedOrder;
     }
 
     private String generateSecurityPin() {

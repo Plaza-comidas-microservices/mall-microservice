@@ -27,6 +27,7 @@ import com.pragma.plazacomidas.mall.domain.spi.INotificationPort;
 import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
+import com.pragma.plazacomidas.mall.domain.spi.ITraceabilityPort;
 
 @ExtendWith(MockitoExtension.class)
 class OrderUseCaseTest {
@@ -46,6 +47,9 @@ class OrderUseCaseTest {
     @Mock
     private INotificationPort notificationPort;
 
+    @Mock
+    private ITraceabilityPort traceabilityPort;
+
     private OrderUseCase orderUseCase;
 
     private static final Long CLIENT_ID = 1L;
@@ -54,7 +58,7 @@ class OrderUseCaseTest {
     @BeforeEach
     void setUp() {
         orderUseCase = new OrderUseCase(orderPersistencePort, platePersistencePort, restaurantPersistencePort,
-            clientContactPort, notificationPort);
+            clientContactPort, notificationPort, traceabilityPort);
     }
 
     private OrderModel buildValidOrder() {
@@ -94,6 +98,7 @@ class OrderUseCaseTest {
         assertEquals(1L, result.getId());
         assertEquals("PENDIENTE", result.getStatus());
         verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+        verify(traceabilityPort, times(1)).logStatusChange(1L, CLIENT_ID, null, "PENDIENTE");
     }
 
     @Test
@@ -107,6 +112,7 @@ class OrderUseCaseTest {
         assertEquals(employeeId, result.getAssignedEmployeeId());
         assertEquals("EN_PREPARACION", result.getStatus());
         verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+        verify(traceabilityPort, times(1)).logStatusChange(1L, null, "PENDIENTE", "EN_PREPARACION");
     }
 
     @Test
@@ -118,6 +124,7 @@ class OrderUseCaseTest {
 
         assertEquals("ENTREGADO", result.getStatus());
         verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+        verify(traceabilityPort, times(1)).logStatusChange(1L, CLIENT_ID, "LISTO", "ENTREGADO");
     }
     
     @Test
@@ -131,6 +138,7 @@ class OrderUseCaseTest {
 
         assertEquals("CANCELADO", result.getStatus());
         verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+        verify(traceabilityPort, times(1)).logStatusChange(1L, CLIENT_ID, "PENDIENTE", "CANCELADO");
     }
 
     // ---------- SAD PATHS ----------
@@ -311,6 +319,7 @@ class OrderUseCaseTest {
         assertEquals(6, result.getSecurityPin().length());
         verify(notificationPort, times(1)).sendOrderReadySms(eq("+573001234567"), any());
         verify(orderPersistencePort, times(1)).saveOrder(any(OrderModel.class));
+        verify(traceabilityPort, times(1)).logStatusChange(1L, CLIENT_ID, "EN_PREPARACION", "LISTO");
     }
 
     @Test
