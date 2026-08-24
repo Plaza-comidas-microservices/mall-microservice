@@ -11,6 +11,7 @@ import com.pragma.plazacomidas.mall.domain.spi.INotificationPort;
 import com.pragma.plazacomidas.mall.domain.spi.IOrderPersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IPlatePersistencePort;
 import com.pragma.plazacomidas.mall.domain.spi.IRestaurantPersistencePort;
+import com.pragma.plazacomidas.mall.domain.spi.ITraceabilityPort;
 import com.pragma.plazacomidas.mall.domain.spi.IUserValidationPort;
 import com.pragma.plazacomidas.mall.domain.usecase.OrderUseCase;
 import com.pragma.plazacomidas.mall.domain.usecase.PlateUseCase;
@@ -36,6 +37,7 @@ public class BeanConfiguration {
     private final IUserValidationPort userValidationPort;
     private final IClientContactPort clientContactPort;
     private final INotificationPort notificationPort;
+    private final ITraceabilityPort traceabilityPort;
     private final IPlateRepository plateRepository;
     private final IPlateEntityMapper plateEntityMapper;
     private final IOrderRepository orderRepository;
@@ -69,7 +71,7 @@ public class BeanConfiguration {
     @Bean
     public IOrderServicePort orderServicePort() {
         return new OrderUseCase(orderPersistencePort(), platePersistencePort(), restaurantPersistencePort(),
-            clientContactPort, notificationPort);
+            clientContactPort, notificationPort, traceabilityPort);
     }
 
 }
