@@ -19,6 +19,9 @@ public class OrderUseCase implements IOrderServicePort{
 
     private static final String SECURITY_PIN_DIGITS = "0123456789";
     private static final int SECURITY_PIN_LENGTH = 6;
+    private static final String STATUS_PENDIENTE = "PENDIENTE";
+    
+
 
     private final IOrderPersistencePort orderPersistencePort;
     private final IPlatePersistencePort platePersistencePort;
@@ -59,14 +62,14 @@ public class OrderUseCase implements IOrderServicePort{
                throw new DomainException("No hay unidades disponibles");
             }else if(!(plate.getRestaurantId().equals(restaurantId))){
                 throw new DomainException("El plato no pertenece a este restaurante");
-            }else if(plate.isActive() == false){
+            }else if(!plate.isActive()){
                 throw new DomainException("Este plato está actualmente fuera del menú");
             }
             
         }
 
         orderModel.setClientId(authenticatedClientId);
-        orderModel.setStatus("PENDIENTE");
+        orderModel.setStatus(STATUS_PENDIENTE);
 
         OrderModel savedOrder = orderPersistencePort.saveOrder(orderModel);
         traceabilityPort.logStatusChange(savedOrder.getId(), savedOrder.getClientId(), null, savedOrder.getStatus());
@@ -95,7 +98,7 @@ public class OrderUseCase implements IOrderServicePort{
 
         if (!order.getRestaurantId().equals(employeeRestaurantId)) {
             throw new DomainException("Este pedido no pertenece a tu restaurante");
-        } else if (!"PENDIENTE".equals(order.getStatus())) {
+        } else if (!STATUS_PENDIENTE.equals(order.getStatus())) {
             throw new DomainException("Solo puedes asignarte pedidos que estén en estado PENDIENTE");
         }
 
@@ -160,7 +163,7 @@ public class OrderUseCase implements IOrderServicePort{
 
         if (!order.getClientId().equals(authenticatedClientId)) {
             throw new DomainException("Este pedido no te pertenece");
-        } else if (!"PENDIENTE".equals(order.getStatus())) {
+        } else if (!STATUS_PENDIENTE.equals(order.getStatus())) {
             throw new DomainException("Lo sentimos, tu pedido ya está en preparación y no puede cancelarse");
         }
 

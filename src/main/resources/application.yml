@@ -5,7 +5,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/plazoleta_mall
     username: root
-    password: Azul061100.@/..-/./
+    password: ${DB_PASSWORD}
 
   jpa:
     hibernate:
@@ -27,4 +27,4 @@ traceability:
     url: http://localhost:8084
 
 jwt:
-  secret: "qasshtipuuwnmcbwjcalibcieebnjolño29jne9djsallsdj-sdoo-ksks-o"
+  secret: ${JWT_SECRET}
