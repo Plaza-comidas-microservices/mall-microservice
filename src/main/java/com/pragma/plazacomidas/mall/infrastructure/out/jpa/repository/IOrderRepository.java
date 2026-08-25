@@ -13,4 +13,6 @@ public interface IOrderRepository extends JpaRepository<OrderEntity, Long> {
     boolean existsByClientIdAndStatusIn(Long clientId, List<String> status);
 
     Page<OrderEntity> findByRestaurantIdAndStatus(Long restaurantId, String status, Pageable pageable);
+
+    List<OrderEntity> findByRestaurantIdAndStatus(Long restaurantId, String status);
 }
