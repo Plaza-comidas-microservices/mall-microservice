@@ -52,4 +52,9 @@ public class OrderJpaAdapter implements IOrderPersistencePort {
     public OrderModel getOrderById(Long orderId) {
         return orderRepository.findById(orderId).map(orderEntityMapper::toOrderModel).orElseThrow(NoDataFoundException::new);
     }
+
+    @Override
+    public List<OrderModel> getDeliveredOrdersByRestaurant(Long restaurantId) {
+        return orderEntityMapper.toOrderModelList(orderRepository.findByRestaurantIdAndStatus(restaurantId, "ENTREGADO"));
+    }
 }

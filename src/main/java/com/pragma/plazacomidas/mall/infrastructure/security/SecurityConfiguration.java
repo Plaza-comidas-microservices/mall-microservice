@@ -33,6 +33,7 @@ public class SecurityConfiguration {
                 .antMatchers(HttpMethod.POST, "/api/v1/plate/**").hasRole("OWNER")
                 .antMatchers(HttpMethod.PATCH, "/api/v1/plate/**").hasRole("OWNER")
                 .antMatchers(HttpMethod.POST, "/api/v1/order/**").hasRole("CLIENT")
+                .antMatchers(HttpMethod.GET, "/api/v1/order/efficiency").hasRole("OWNER")
                 .antMatchers(HttpMethod.GET, "/api/v1/order/**").hasRole("EMPLOYEE")
                 .antMatchers(HttpMethod.PATCH, "/api/v1/order/*/cancel").hasRole("CLIENT")
                 .antMatchers(HttpMethod.PATCH, "/api/v1/order/**").hasRole("EMPLOYEE")
